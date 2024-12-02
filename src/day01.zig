@@ -11,8 +11,8 @@ fn part1() !void {
 
     while (lines.next()) |line| {
         var sides = std.mem.split(u8, line, "   ");
-        try firstList.append(std.fmt.parseInt(i32, sides.next().?, 10) catch unreachable);
-        try secondList.append(std.fmt.parseInt(i32, sides.next().?, 10) catch unreachable);
+        try firstList.append(try std.fmt.parseInt(i32, sides.next().?, 10));
+        try secondList.append(try std.fmt.parseInt(i32, sides.next().?, 10));
     }
     std.mem.sort(i32, firstList.items, {}, comptime std.sort.asc(i32));
     std.mem.sort(i32, secondList.items, {}, comptime std.sort.asc(i32));
@@ -34,7 +34,7 @@ fn part2() !void {
 
     while (lines.next()) |line| {
         var sides = std.mem.split(u8, line, "   ");
-        try firstList.append(std.fmt.parseInt(u32, sides.next().?, 10) catch unreachable);
+        try firstList.append(try std.fmt.parseInt(u32, sides.next().?, 10));
 
         const countEntry = try secondListMap.getOrPutValue(try std.fmt.parseInt(u32, sides.next().?, 10), 0);
         countEntry.value_ptr.* += 1;
