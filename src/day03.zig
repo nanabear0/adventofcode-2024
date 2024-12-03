@@ -4,7 +4,7 @@ const mvzr = @import("mvzr");
 const input = std.mem.trim(u8, @embedFile("inputs/day03.txt"), "\n");
 
 fn doThing(enablable: bool) !u32 {
-    const validOpRegex = mvzr.compile("mul\\(\\d+,\\d+\\)|do\\(\\)|don't\\(\\)").?;
+    const validOpRegex = mvzr.compile("mul\\((:?\\d+,)+\\d+\\)|do\\(\\)|don't\\(\\)").?;
     var validOpIter = validOpRegex.iterator(input);
     var acc: u32 = 0;
     var opEnabled: bool = true;
@@ -13,7 +13,7 @@ fn doThing(enablable: bool) !u32 {
             opEnabled = true;
         } else if (match.slice.len == 7) {
             opEnabled = false;
-        } else if (enablable or opEnabled) {
+        } else if (!enablable or opEnabled) {
             const numRegex = mvzr.compile("\\d+").?;
             var numIter = numRegex.iterator(match.slice);
             var mulAcc: u32 = 1;
