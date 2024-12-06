@@ -68,15 +68,78 @@ fn part1() !void {
         }
         currentMove = move;
     }
-    var dick = visitedPointSet.keyIterator();
-    var fuck: usize = 0;
-    while (dick.next()) |_| : (fuck += 1) {}
 
-    std.debug.print("part1: {d}\n", .{fuck});
+    std.debug.print("part1: {d}\n", .{visitedPointSet.count()});
 }
 
 fn part2() !void {
-    std.debug.print("part2: {d}\n", .{0});
+    var linesIter = std.mem.split(u8, input, "\n");
+    var y: isize = 0;
+    var map = std.AutoHashMap(Point, MapEntry).init(std.heap.page_allocator);
+    defer map.deinit();
+
+    var startingVector: ?Vector = null;
+    while (linesIter.next()) |line| : (y += 1) {
+        for (line, 0..) |char, x| {
+            const point = Point{ .x = @intCast(x), .y = y };
+            switch (char) {
+                '#' => try map.put(point, .blocked),
+                '.' => try map.put(point, .free),
+                '^' => startingVector = Vector{ .point = point, .dir = 0 },
+                '>' => startingVector = Vector{ .point = point, .dir = 1 },
+                'v' => startingVector = Vector{ .point = point, .dir = 2 },
+                '<' => startingVector = Vector{ .point = point, .dir = 3 },
+                else => {},
+            }
+        }
+    }
+    try map.put(startingVector.?.point, .free);
+
+    var visitedVectorSet = std.AutoHashMap(Vector, void).init(std.heap.page_allocator);
+    var visitedPointSet = std.AutoHashMap(Point, void).init(std.heap.page_allocator);
+    defer visitedVectorSet.deinit();
+    defer visitedPointSet.deinit();
+    var mapIter = map.iterator();
+    var result: usize = 0;
+    var counterino: usize = 0;
+    while (mapIter.next()) |entryToSkip| : (counterino += 1) {
+        std.debug.print("doing {any}\n", .{counterino});
+        defer visitedVectorSet.clearRetainingCapacity();
+        defer visitedPointSet.clearRetainingCapacity();
+
+        if (entryToSkip.value_ptr.* != .free) continue;
+        entryToSkip.value_ptr.* = .blocked;
+        defer entryToSkip.value_ptr.* = .free;
+
+        var currentMove: Vector = startingVector orelse unreachable;
+        var looperino = false;
+        movement: while (true) {
+            try visitedVectorSet.put(currentMove, {});
+            try visitedPointSet.put(currentMove.point, {});
+
+            var move = currentMove.move();
+            if (map.getKey(move.point) == null) {
+                looperino = false;
+                break :movement;
+            }
+
+            while (map.get(move.point) != MapEntry.free) {
+                currentMove = currentMove.rotate();
+                move = currentMove.move();
+            }
+
+            if (visitedVectorSet.getKey(move) != null) {
+                looperino = true;
+                break :movement;
+            }
+            currentMove = move;
+        }
+        if (looperino) {
+            result += 1;
+        }
+    }
+
+    std.debug.print("part2: {d}\n", .{result});
 }
 
 pub export fn day06() void {
