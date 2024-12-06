@@ -1,6 +1,9 @@
 const std = @import("std");
 const Point = @import("utils.zig").Point;
 
+var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+const gpa = gpa_impl.allocator();
+
 const input = std.mem.trim(u8, @embedFile("inputs/day06.txt"), "\n");
 const MapEntry = enum { free, blocked };
 
@@ -25,7 +28,7 @@ const Vector = struct {
 fn part1() !void {
     var linesIter = std.mem.split(u8, input, "\n");
     var y: isize = 0;
-    var map = std.AutoHashMap(Point, MapEntry).init(std.heap.page_allocator);
+    var map = std.AutoHashMap(Point, MapEntry).init(gpa);
     defer map.deinit();
 
     var startingVector: ?Vector = null;
@@ -45,8 +48,8 @@ fn part1() !void {
     }
     try map.put(startingVector.?.point, .free);
 
-    var visitedVectorSet = std.AutoHashMap(Vector, void).init(std.heap.page_allocator);
-    var visitedPointSet = std.AutoHashMap(Point, void).init(std.heap.page_allocator);
+    var visitedVectorSet = std.AutoHashMap(Vector, void).init(gpa);
+    var visitedPointSet = std.AutoHashMap(Point, void).init(gpa);
     defer visitedVectorSet.deinit();
     defer visitedPointSet.deinit();
 
@@ -75,7 +78,7 @@ fn part1() !void {
 fn part2() !void {
     var linesIter = std.mem.split(u8, input, "\n");
     var y: isize = 0;
-    var map = std.AutoHashMap(Point, MapEntry).init(std.heap.page_allocator);
+    var map = std.AutoHashMap(Point, MapEntry).init(gpa);
     defer map.deinit();
 
     var startingVector: ?Vector = null;
@@ -95,14 +98,14 @@ fn part2() !void {
     }
     try map.put(startingVector.?.point, .free);
 
-    var visitedVectorSet = std.AutoHashMap(Vector, void).init(std.heap.page_allocator);
-    var visitedPointSet = std.AutoHashMap(Point, void).init(std.heap.page_allocator);
+    var visitedVectorSet = std.AutoHashMap(Vector, void).init(gpa);
+    var visitedPointSet = std.AutoHashMap(Point, void).init(gpa);
     defer visitedVectorSet.deinit();
     defer visitedPointSet.deinit();
     var mapIter = map.iterator();
     var result: usize = 0;
     var counterino: usize = 0;
-    while (mapIter.next()) |entryToSkip| : (counterino += 1) {
+    attempts: while (mapIter.next()) |entryToSkip| : (counterino += 1) {
         defer visitedVectorSet.clearRetainingCapacity();
         defer visitedPointSet.clearRetainingCapacity();
 
@@ -111,15 +114,13 @@ fn part2() !void {
         defer entryToSkip.value_ptr.* = .free;
 
         var currentMove: Vector = startingVector orelse unreachable;
-        var looperino = false;
-        movement: while (true) {
+        while (true) {
             try visitedVectorSet.put(currentMove, {});
             try visitedPointSet.put(currentMove.point, {});
 
             var move = currentMove.move();
             if (map.getKey(move.point) == null) {
-                looperino = false;
-                break :movement;
+                continue :attempts;
             }
 
             while (map.get(move.point) != MapEntry.free) {
@@ -128,13 +129,10 @@ fn part2() !void {
             }
 
             if (visitedVectorSet.getKey(move) != null) {
-                looperino = true;
-                break :movement;
+                result += 1;
+                continue :attempts;
             }
             currentMove = move;
-        }
-        if (looperino) {
-            result += 1;
         }
     }
 
