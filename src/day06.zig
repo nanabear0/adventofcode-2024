@@ -103,7 +103,6 @@ fn part2() !void {
     var result: usize = 0;
     var counterino: usize = 0;
     while (mapIter.next()) |entryToSkip| : (counterino += 1) {
-        std.debug.print("doing {any}\n", .{counterino});
         defer visitedVectorSet.clearRetainingCapacity();
         defer visitedPointSet.clearRetainingCapacity();
 
