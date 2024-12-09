@@ -23,7 +23,8 @@ fn doThing(repeatingAntiNodes: bool) !usize {
             if (char == '.') continue;
 
             const point = Point{ .x = @intCast(x), .y = y };
-            var entry = try antennaLocations.getOrPutValue(char, std.ArrayList(Point).init(gpa));
+            var entry = try antennaLocations.getOrPut(char);
+            if (!entry.found_existing) entry.value_ptr.* = std.ArrayList(Point).init(gpa);
             try entry.value_ptr.append(point);
         }
         xMax = @as(isize, @intCast(line.len)) - 1;
