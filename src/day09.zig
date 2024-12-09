@@ -6,9 +6,18 @@ const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day09.txt"), "\n");
 
-fn part1() !void {
-    var blocks = std.ArrayList(?usize).init(gpa);
-    defer blocks.deinit();
+fn checksum(items: []?usize) usize {
+    var result: usize = 0;
+    for (items, 0..) |blockVal, i| {
+        if (blockVal) |val| {
+            result += val * i;
+        } else continue;
+    }
+    return result;
+}
+
+fn readInput(allocator: std.mem.Allocator) !std.ArrayList(?usize) {
+    var blocks = std.ArrayList(?usize).init(allocator);
 
     var id: usize = 0;
     var isFile = true;
@@ -23,6 +32,13 @@ fn part1() !void {
             isFile = true;
         }
     }
+
+    return blocks;
+}
+
+fn part1() !void {
+    var blocks = readInput(gpa) catch unreachable;
+    defer blocks.deinit();
 
     var start: usize = 0;
     var end: usize = blocks.items.len - 1;
@@ -36,75 +52,45 @@ fn part1() !void {
         start += 1;
     }
 
-    var result: usize = 0;
-    for (blocks.items, 0..) |blockVal, i| {
-        if (blockVal) |val| {
-            result += val * i;
-        } else break;
-    }
-    std.debug.print("part1: {any}\n", .{result});
+    std.debug.print("part1: {any}\n", .{checksum(blocks.items)});
 }
 
 fn part2() !void {
-    var blocks = std.ArrayList(?usize).init(gpa);
+    var blocks = readInput(gpa) catch unreachable;
     defer blocks.deinit();
 
-    var id: usize = 0;
-    var isFile = true;
-    for (input) |char| {
-        const num: usize = @intCast(char - 48);
-        if (isFile) {
-            try blocks.appendNTimes(id, num);
-            id += 1;
-            isFile = false;
-        } else {
-            try blocks.appendNTimes(null, num);
-            isFile = true;
-        }
-    }
-
     var workingWithSlice = blocks.items[0..];
-    var poop: usize = 0;
     while (workingWithSlice.len > 0) {
-        poop += 1;
-        std.debug.print("------{any}------\n", .{workingWithSlice});
-        if (std.mem.indexOf(?usize, workingWithSlice, &[_]?usize{null})) |emptySpotStart| {
-            if (std.mem.indexOfNone(?usize, workingWithSlice[emptySpotStart..], &[_]?usize{null})) |emptySpotSize| {
-                var targetSearchSlice = workingWithSlice[emptySpotStart + emptySpotSize ..];
-                while (targetSearchSlice.len > 0) {
-                    if (std.mem.indexOf(?usize, targetSearchSlice, &[_]?usize{targetSearchSlice[targetSearchSlice.len - 1]})) |startOfReplacementSlice| {
-                        const sizeOfSlice = targetSearchSlice.len - startOfReplacementSlice;
-                        std.debug.print("{any}, {any},{d},{d}\n", .{ targetSearchSlice, targetSearchSlice[startOfReplacementSlice..], emptySpotSize, sizeOfSlice });
-                        if (emptySpotSize >= sizeOfSlice) {
-                            for (0..sizeOfSlice) |i| {
-                                workingWithSlice[emptySpotStart + i] = targetSearchSlice[targetSearchSlice.len - 1];
-                                targetSearchSlice[startOfReplacementSlice + i] = null;
-                            }
-                            workingWithSlice = workingWithSlice[emptySpotStart + sizeOfSlice .. workingWithSlice.len - 1 - sizeOfSlice];
-                            break;
-                        } else {
-                            if (std.mem.lastIndexOfNone(?usize, targetSearchSlice, &[_]?usize{ targetSearchSlice[targetSearchSlice.len - 1], null })) |startOfNextFile| {
-                                targetSearchSlice = targetSearchSlice[0 .. startOfNextFile + 1];
-                            } else {
-                                break;
-                            }
-                        }
-                    }
+        const fileToMove = workingWithSlice[workingWithSlice.len - 1];
+        const fileStart = std.mem.lastIndexOfNone(?usize, workingWithSlice, &[_]?usize{fileToMove}).? + 1;
+        const fileSize = workingWithSlice.len - fileStart;
+
+        var emptySearchSlice = workingWithSlice;
+        while (std.mem.indexOf(?usize, emptySearchSlice[0..], &[_]?usize{null})) |emptyStart| {
+            emptySearchSlice = emptySearchSlice[emptyStart..];
+            const emptySize = std.mem.indexOfNone(?usize, emptySearchSlice, &[_]?usize{null}).?;
+            if (fileSize <= emptySize) {
+                for (0..fileSize) |i| {
+                    std.mem.swap(?usize, &emptySearchSlice[i], &workingWithSlice[fileStart + i]);
                 }
-                // std.mem.lastIndexOf(?usize, haystack: workingWithSlice[emptySpotSize+])
-                // break;
-                // workingWithSlice = std.mem.trimRight(?usize, workingWithSlice[emptySpotStart + emptySpotSize ..], &[_]?usize{null});
-            } else break;
+                break;
+            }
+            emptySearchSlice = emptySearchSlice[emptySize..];
+        }
+
+        const endOfNextFile = std.mem.lastIndexOfNone(?usize, workingWithSlice, &[_]?usize{ fileToMove, null });
+        const startOfFirstEmptySpot = std.mem.indexOf(?usize, workingWithSlice, &[_]?usize{null});
+        if (endOfNextFile != null and startOfFirstEmptySpot != null) {
+            workingWithSlice = workingWithSlice[startOfFirstEmptySpot.? .. endOfNextFile.? + 1];
         } else break;
-        if (poop > 20) break;
     }
 
-    std.debug.print("part2: {any}\n", .{0});
+    std.debug.print("part2: {any}\n", .{checksum(blocks.items)});
 }
 
 pub export fn day09() void {
     std.debug.print("-day09-\n", .{});
 
-    // part1() catch unreachable;
+    part1() catch unreachable;
     part2() catch unreachable;
 }
