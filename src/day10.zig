@@ -12,7 +12,7 @@ const neighbours = [4]Point{
     Point{ .x = 1, .y = 0 },
 };
 
-fn part1() !void {
+fn doThing() !void {
     var map = std.AutoHashMap(Point, u8).init(gpa);
     var zeroes = std.ArrayList(Point).init(gpa);
     defer map.deinit();
@@ -66,13 +66,8 @@ fn part1() !void {
     std.debug.print("part2: {any}\n", .{p2Result});
 }
 
-fn part2() !void {
-    std.debug.print("part2: {any}\n", .{0});
-}
-
 pub export fn day10() void {
     std.debug.print("-day10-\n", .{});
 
-    part1() catch unreachable;
-    part2() catch unreachable;
+    doThing() catch unreachable;
 }
