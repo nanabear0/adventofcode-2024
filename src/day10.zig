@@ -32,14 +32,17 @@ fn doThing() !void {
 
     var p1Result: usize = 0;
     var p2Result: usize = 0;
+    var currents = std.AutoArrayHashMap(Point, usize).init(gpa);
+    var nextTargets = std.AutoArrayHashMap(Point, usize).init(gpa);
+    defer nextTargets.deinit();
+    defer currents.deinit();
     for (zeroes.items) |zero| {
-        var currents = std.AutoHashMap(Point, usize).init(gpa);
-        defer currents.deinit();
+        defer currents.clearRetainingCapacity();
+        defer nextTargets.clearRetainingCapacity();
         try currents.put(zero, 1);
 
         var currentValue: u8 = 0;
         while (currents.count() > 0 and currentValue < 9) : (currentValue += 1) {
-            var nextTargets = std.AutoHashMap(Point, usize).init(gpa);
             var currentsIter = currents.iterator();
             while (currentsIter.next()) |current| {
                 for (neighbours) |neighbourDir| {
@@ -52,13 +55,12 @@ fn doThing() !void {
                     }
                 }
             }
-            currents.deinit();
-            currents = nextTargets;
+            std.mem.swap(std.AutoArrayHashMap(Point, usize), &currents, &nextTargets);
+            nextTargets.clearRetainingCapacity();
         }
         if (currentValue == 9) {
             p1Result += currents.count();
-            var currentsIter = currents.valueIterator();
-            while (currentsIter.next()) |value| p2Result += value.*;
+            for (currents.values()) |value| p2Result += value;
         }
     }
 
