@@ -14,34 +14,23 @@ const directions = [4]Point{
 };
 
 fn reduceWalls(walls: *const std.AutoArrayHashMap([2]Point, void)) !usize {
-    var processed = std.AutoArrayHashMap([2]Point, void).init(gpa);
-    var bfs = std.AutoArrayHashMap([2]Point, void).init(gpa);
-    var bfsNext = std.AutoArrayHashMap([2]Point, void).init(gpa);
+    var processed = std.AutoHashMap([2]Point, void).init(gpa);
+    try processed.ensureTotalCapacity(@intCast(walls.count()));
     defer processed.deinit();
-    defer bfs.deinit();
-    defer bfsNext.deinit();
 
     var sides: usize = 0;
     for (walls.keys()) |wall| {
         if (processed.contains(wall)) continue;
-        bfs.clearRetainingCapacity();
-        bfsNext.clearRetainingCapacity();
-        try bfs.put(wall, {});
         try processed.put(wall, {});
-        while (bfs.count() > 0) {
-            for (bfs.keys()) |current| {
-                const adjacentwallDirs: *const [2]Point = if (current[1].x == 0) directions[2..4] else directions[0..2];
 
-                for (adjacentwallDirs) |dir| {
-                    const neighbour = .{ current[0].add(dir), current[1] };
-                    if (!processed.contains(neighbour) and walls.contains(neighbour)) {
-                        try bfsNext.put(neighbour, {});
-                        try processed.put(neighbour, {});
-                    }
-                }
+        const adjacentwallDirs: *const [2]Point = if (wall[1].x == 0) directions[2..4] else directions[0..2];
+
+        for (adjacentwallDirs) |dir| {
+            var neighbour = .{ wall[0].add(dir), wall[1] };
+            while (!processed.contains(neighbour) and walls.contains(neighbour)) {
+                try processed.put(neighbour, {});
+                neighbour = .{ neighbour[0].add(dir), neighbour[1] };
             }
-            std.mem.swap(std.AutoArrayHashMap([2]Point, void), &bfs, &bfsNext);
-            bfsNext.clearRetainingCapacity();
         }
         sides += 1;
     }
@@ -62,8 +51,9 @@ fn doThing() !void {
         }
     }
 
-    var areaMap = std.AutoArrayHashMap(Point, void).init(gpa);
-    var processed = std.AutoArrayHashMap(Point, void).init(gpa);
+    var areaMap = std.AutoHashMap(Point, void).init(gpa);
+    var processed = std.AutoHashMap(Point, void).init(gpa);
+    try processed.ensureTotalCapacity(@intCast(map.count()));
     var bfs = std.AutoArrayHashMap(Point, void).init(gpa);
     var bfsNext = std.AutoArrayHashMap(Point, void).init(gpa);
     var walls = std.AutoArrayHashMap([2]Point, void).init(gpa);
