@@ -25,15 +25,15 @@ fn doThing(bigboi: bool) !isize {
             f += 10000000000000;
         }
 
-        const ybig = f * a - c * d;
-        const ysmol = a * e - b * d;
-        if (@mod(ybig, ysmol) != 0) continue;
-        const y = @divExact(ybig, ysmol);
+        const ynum = f * a - c * d;
+        const ydenom = a * e - b * d;
+        if (@mod(ynum, ydenom) != 0) continue;
+        const y = @divExact(ynum, ydenom);
 
-        const xbig = c - b * y;
-        const xsmol = a;
-        if (@mod(xbig, xsmol) != 0) continue;
-        const x = @divExact(xbig, xsmol);
+        const xnum = c - b * y;
+        const xdenom = a;
+        if (@mod(xnum, xdenom) != 0) continue;
+        const x = @divExact(xnum, xdenom);
 
         if (x >= 0 and y >= 0) {
             tokens += x * 3 + y;
