@@ -1,4 +1,9 @@
 const std = @import("std");
+const mvzr = @import("mvzr");
+const Point = @import("utils.zig").Point;
+
+var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day05.txt"), "\n");
 
@@ -25,9 +30,10 @@ fn part1() !void {
 
     var acc: usize = 0;
     var testsIter = std.mem.split(u8, tests, "\n");
+    var pages = std.ArrayList(usize).init(std.heap.page_allocator);
+    defer pages.deinit();
     tests: while (testsIter.next()) |currentTest| {
-        var pages = std.ArrayList(usize).init(std.heap.page_allocator);
-        defer pages.deinit();
+        pages.clearRetainingCapacity();
         var pagesIter = std.mem.split(u8, currentTest, ",");
         while (pagesIter.next()) |page| try pages.append(try std.fmt.parseInt(usize, page, 10));
         for (pages.items, 0..) |page, i| {
@@ -67,9 +73,10 @@ fn part2() !void {
 
     var acc: usize = 0;
     var testsIter = std.mem.split(u8, tests, "\n");
+    var pages = std.ArrayList(usize).init(std.heap.page_allocator);
+    defer pages.deinit();
     while (testsIter.next()) |currentTests| {
-        var pages = std.ArrayList(usize).init(std.heap.page_allocator);
-        defer pages.deinit();
+        pages.clearRetainingCapacity();
         var pagesIter = std.mem.split(u8, currentTests, ",");
         while (pagesIter.next()) |page| try pages.append(try std.fmt.parseInt(usize, page, 10));
 

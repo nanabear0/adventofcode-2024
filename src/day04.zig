@@ -1,17 +1,11 @@
 const std = @import("std");
+const mvzr = @import("mvzr");
+const Point = @import("utils.zig").Point;
+
+var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day04.txt"), "\n");
-
-const Point = struct {
-    x: isize,
-    y: isize,
-    fn add(self: *Point, other: Point) Point {
-        return Point{ .x = self.x + other.x, .y = self.y + other.y };
-    }
-    fn subtract(self: *Point, other: Point) Point {
-        return Point{ .x = self.x - other.x, .y = self.y - other.y };
-    }
-};
 
 const directions = [8]Point{
     Point{ .x = 0, .y = 1 },
@@ -34,14 +28,9 @@ fn part1() !void {
 
     var lineIter = std.mem.split(u8, input, "\n");
     var y: isize = 0;
-    while (lineIter.next()) |line| {
-        defer y += 1;
-
-        var x: isize = 0;
-        for (line) |char| {
-            defer x += 1;
-
-            const point = Point{ .x = x, .y = y };
+    while (lineIter.next()) |line| : (y += 1) {
+        for (line, 0..) |char, x| {
+            const point = Point{ .x = @intCast(x), .y = y };
             try map.put(point, char);
             if (char == 'X') try xs.put(point, {});
         }

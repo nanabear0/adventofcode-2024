@@ -1,4 +1,9 @@
 const std = @import("std");
+const mvzr = @import("mvzr");
+const Point = @import("utils.zig").Point;
+
+var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day02.txt"), "\n");
 
@@ -23,10 +28,10 @@ fn isReportSafe(levels: []i32, skipIndex: ?usize) !bool {
 fn part1() !void {
     var lines = std.mem.split(u8, input, "\n");
     var safeReports: u32 = 0;
+    var levels = std.ArrayList(i32).init(gpa);
+    defer levels.deinit();
     while (lines.next()) |line| {
-        var levels = std.ArrayList(i32).init(std.heap.page_allocator);
-        defer levels.deinit();
-
+        levels.clearRetainingCapacity();
         var lineIter = std.mem.split(u8, line, " ");
         while (lineIter.next()) |level| try levels.append(try std.fmt.parseInt(i32, level, 10));
 
@@ -39,10 +44,10 @@ fn part1() !void {
 fn part2() !void {
     var lines = std.mem.split(u8, input, "\n");
     var safeReports: u32 = 0;
+    var levels = std.ArrayList(i32).init(gpa);
+    defer levels.deinit();
     while (lines.next()) |line| {
-        var levels = std.ArrayList(i32).init(std.heap.page_allocator);
-        defer levels.deinit();
-
+        levels.clearRetainingCapacity();
         var lineIter = std.mem.split(u8, line, " ");
         while (lineIter.next()) |level| try levels.append(try std.fmt.parseInt(i32, level, 10));
 

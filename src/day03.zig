@@ -1,5 +1,9 @@
 const std = @import("std");
 const mvzr = @import("mvzr");
+const Point = @import("utils.zig").Point;
+
+var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day03.txt"), "\n");
 
