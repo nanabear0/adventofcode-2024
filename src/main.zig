@@ -15,25 +15,27 @@ const day12 = @import("./day12.zig").day12;
 const day13 = @import("./day13.zig").day13;
 const day14 = @import("./day14.zig").day14;
 const day15 = @import("./day15.zig").day15;
+const day16 = @import("./day16.zig").day16;
 
 pub fn main() void {
     var timer = std.time.Timer.start() catch unreachable;
     {
-        day01();
-        day02();
-        day03();
-        day04();
-        day05();
-        day06();
-        day07();
-        day08();
-        day09();
-        day10();
-        day11();
-        day12();
-        day13();
+        // day01();
+        // day02();
+        // day03();
+        // day04();
+        // day05();
+        // day06();
+        // day07();
+        // day08();
+        // day09();
+        // day10();
+        // day11();
+        // day12();
+        // day13();
         // day14();
-        day15();
+        // day15();
+        day16();
     }
     const elapsed2: f64 = @floatFromInt(timer.read());
     std.debug.print("Time: {d:.3}ms\n", .{

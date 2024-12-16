@@ -1,29 +1,12 @@
 const std = @import("std");
 const Point = @import("utils.zig").Point;
+const Vector = @import("utils.zig").Vector;
 
 var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
 const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day06.txt"), "\n");
 const MapEntry = enum { free, blocked };
-
-const directions = [4]Point{
-    Point{ .x = 0, .y = -1 },
-    Point{ .x = 1, .y = 0 },
-    Point{ .x = 0, .y = 1 },
-    Point{ .x = -1, .y = 0 },
-};
-
-const Vector = struct {
-    point: Point,
-    dir: u3,
-    pub fn move(self: *Vector) Vector {
-        return Vector{ .point = self.point.add(directions[self.dir]), .dir = self.dir };
-    }
-    pub fn rotate(self: *Vector) Vector {
-        return Vector{ .point = self.point, .dir = (self.dir + 1) % 4 };
-    }
-};
 
 fn part1and2() !void {
     var linesIter = std.mem.split(u8, input, "\n");
@@ -62,7 +45,7 @@ fn part1and2() !void {
             if (map.getKey(move.point) == null) break :movement;
 
             while (map.get(move.point) != MapEntry.free) {
-                currentMove = currentMove.rotate();
+                currentMove = currentMove.turnRight();
                 move = currentMove.move();
             }
 
@@ -100,7 +83,7 @@ fn part1and2() !void {
             }
 
             while (map.get(move.point) != MapEntry.free) {
-                currentMove = currentMove.rotate();
+                currentMove = currentMove.turnRight();
                 move = currentMove.move();
             }
 
