@@ -42,14 +42,11 @@ fn part1() !void {
 
     var start: usize = 0;
     var end: usize = blocks.items.len - 1;
-    while (end > start) {
+    while (end > start) : (start += 1) {
         if (blocks.items[start] == null) {
             while (blocks.items[end] == null) end -= 1;
-            blocks.items[start] = blocks.items[end];
-            blocks.items[end] = null;
+            std.mem.swap(?usize, &blocks.items[start], &blocks.items[end]);
         }
-
-        start += 1;
     }
 
     std.debug.print("part1: {any}\n", .{checksum(blocks.items)});
