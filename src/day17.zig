@@ -8,87 +8,54 @@ const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day17.txt"), "\n");
 
-fn getCombo(value: usize, registers: [3]usize) usize {
-    return switch (value) {
-        0, 1, 2, 3 => value,
-        4, 5, 6 => registers[value - 4],
-        else => unreachable,
-    };
-}
+fn garbage(am: usize) [16]?usize {
+    var output = [_]?usize{null} ** 16;
+    var i: u5 = 0;
+    var a = am;
+    var b: usize = 0;
+    var c: usize = 0;
+    while (a != 0) {
+        b = a % 8;
+        b = b ^ 5;
+        c = a >> @intCast(b);
+        b = b ^ 6;
+        b = b ^ c;
+        output[i] = b % 8;
 
-fn runCode(operations: std.ArrayList(usize), initialA: usize) !std.ArrayList(usize) {
-    var registers = [3]usize{ initialA, 0, 0 };
-    var outputBuffer = std.ArrayList(usize).init(gpa);
-    var insPointer: usize = 0;
-    while (insPointer < operations.items.len) {
-        switch (operations.items[insPointer]) {
-            // adv
-            0 => {
-                if (insPointer == operations.items.len - 1) break;
-                registers[0] = registers[0] >> @intCast(getCombo(operations.items[insPointer + 1], registers));
-            },
-            // bxl
-            1 => {
-                if (insPointer == operations.items.len - 1) break;
-                registers[1] = registers[1] ^ operations.items[insPointer + 1];
-            },
-            // bst
-            2 => {
-                if (insPointer == operations.items.len - 1) break;
-                registers[1] = getCombo(operations.items[insPointer + 1], registers) % 8;
-            },
-            // jnz
-            3 => {
-                if (registers[0] != 0) {
-                    if (insPointer == operations.items.len - 1) break;
-                    insPointer = operations.items[insPointer + 1];
-                    continue;
-                }
-            },
-            // bxc
-            4 => {
-                if (insPointer == operations.items.len - 1) break;
-                registers[1] = registers[1] ^ registers[2];
-            },
-            // out
-            5 => {
-                if (insPointer == operations.items.len - 1) break;
-                try outputBuffer.append(getCombo(operations.items[insPointer + 1], registers) % 8);
-            },
-            // bdv
-            6 => {
-                if (insPointer == operations.items.len - 1) break;
-                registers[1] = registers[0] >> @intCast(getCombo(operations.items[insPointer + 1], registers));
-            },
-            // cdv
-            7 => {
-                if (insPointer == operations.items.len - 1) break;
-                registers[2] = registers[0] >> @intCast(getCombo(operations.items[insPointer + 1], registers));
-            },
-            else => unreachable,
-        }
-        insPointer += 2;
+        a = a / 8;
+        i += 1;
     }
-    return outputBuffer;
+    return output;
 }
 
 fn doThing() !void {
-    var operations = std.ArrayList(usize).init(gpa);
-    defer operations.deinit();
+    const target = [16]?usize{ 2, 4, 1, 5, 7, 5, 1, 6, 0, 3, 4, 3, 5, 5, 3, 0 };
+    std.debug.print("part1: {any}\n", .{garbage(34615120)});
+    std.debug.print("part2: fuck you\n", .{});
 
-    const numRegex = mvzr.compile("-?[0-9]+").?;
-    var numIter = numRegex.iterator(input);
-    const initialA = try std.fmt.parseInt(usize, numIter.next().?.slice, 10);
-    _ = numIter.next().?;
-    _ = numIter.next().?;
-    while (numIter.next()) |opmatch| {
-        try operations.append(try std.fmt.parseInt(usize, opmatch.slice, 10));
+    // var str = [16]u8{ '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0' };
+    // digits: for (0..16) |digit| {
+    //     for (0..8) |value| {
+    //         str[15 - digit] = @as(u8, @intCast(value)) + '0';
+    //         std.debug.print("trying {s}\n", .{str});
+    //         if (ananinAmi(try std.fmt.parseInt(usize, &str, 8), digit + 1)) {
+    //             std.debug.print("matches {d}th digit\n\n", .{digit});
+    //             continue :digits;
+    //         }
+    //     }
+    //     std.debug.print("I fucked up at digit {d}\n\n", .{digit});
+    //     break;
+    // }
+    // yolo taimu
+    var a: usize = try std.fmt.parseInt(usize, "1000000000000000", 8);
+    while (true) : (a += 1) {
+        const result = garbage(a);
+        if (std.mem.eql(?usize, &target, &result)) {
+            std.debug.print("part2: {any}\n", .{a});
+            break;
+        }
     }
-
-    const outputBuffer = try runCode(operations, initialA);
-    defer outputBuffer.deinit();
-
-    std.debug.print("output: {any}\n", .{outputBuffer.items});
+    // std.debug.print("\npart2: {any}\n", .{try std.fmt.parseInt(usize, &str, 8)});
 }
 
 pub export fn day17() void {

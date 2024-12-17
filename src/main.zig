@@ -40,7 +40,7 @@ pub fn main() void {
         day17();
     }
     const elapsed2: f64 = @floatFromInt(timer.read());
-    std.debug.print("Time: {d:.3}ms\n", .{
+    std.debug.print("\nTime: {d:.3}ms\n", .{
         elapsed2 / std.time.ns_per_ms,
     });
 }
