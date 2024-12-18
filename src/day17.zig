@@ -91,8 +91,8 @@ fn part1() !void {
     std.debug.print("part1: {any}\n", .{outputBuffer.items});
 }
 
-fn runCodeNative(am: usize) !std.ArrayList(u8) {
-    var output = std.ArrayList(u8).init(gpa);
+fn runCodeNative(am: usize) !usize {
+    var output: usize = 0;
     var a = am;
     var b: usize = 0;
     var c: usize = 0;
@@ -100,46 +100,37 @@ fn runCodeNative(am: usize) !std.ArrayList(u8) {
         b = a % 8 ^ 5;
         c = a >> @intCast(b);
         b = b ^ 6 ^ c;
-        try output.append(@as(u8, @intCast(b % 8)) + '0');
+        output = output * 8 + b % 8;
     }
     return output;
 }
 
 fn part2() !void {
-    const target = "2415751603435530";
-    var searchList = std.ArrayList(std.ArrayList(u8)).init(gpa);
-    var nextList = std.ArrayList(std.ArrayList(u8)).init(gpa);
+    const target = try std.fmt.parseInt(usize, "2415751603435530", 8);
+    var searchList = std.ArrayList(usize).init(gpa);
+    var nextList = std.ArrayList(usize).init(gpa);
     defer searchList.deinit();
     defer nextList.deinit();
-    try searchList.append(std.ArrayList(u8).init(gpa));
-    for (0..target.len) |digit| {
+    try searchList.append(0);
+    for (0..16) |digit| {
         nextList.clearRetainingCapacity();
         for (searchList.items) |option| {
             for (0..8) |value| {
-                var clone = std.ArrayList(u8).init(gpa);
-                for (option.items) |o| {
-                    try clone.append(o);
-                }
-                try clone.append(@as(u8, @intCast(value)) + '0');
-                const result = try runCodeNative(try std.fmt.parseInt(usize, clone.items, 8));
-                if (std.mem.eql(u8, result.items, target[target.len - 1 - digit ..])) {
+                const clone = option * 8 + value;
+                if (try runCodeNative(clone) == target % try std.math.powi(
+                    usize,
+                    8,
+                    digit + 1,
+                )) {
                     try nextList.append(clone);
-                } else {
-                    clone.deinit();
                 }
-                result.deinit();
             }
-            option.deinit();
         }
-        std.mem.swap(std.ArrayList(std.ArrayList(u8)), &searchList, &nextList);
+        std.mem.swap(std.ArrayList(usize), &searchList, &nextList);
         nextList.clearRetainingCapacity();
     }
 
-    var smallest: usize = std.math.maxInt(usize);
-    for (searchList.items) |item| {
-        smallest = @min(smallest, try std.fmt.parseInt(usize, item.items, 8));
-        item.deinit();
-    }
+    const smallest = std.mem.min(usize, searchList.items);
     std.debug.print("part2: {d}", .{smallest});
 }
 
