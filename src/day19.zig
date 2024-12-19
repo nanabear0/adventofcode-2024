@@ -9,27 +9,25 @@ const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day19.txt"), "\n");
 
-fn validateDesign(design: []const u8, patterns: *const std.StringHashMap(void), designValidations: *std.StringHashMap(bool)) !bool {
-    if (designValidations.get(design)) |validity| {
-        return validity;
-    }
-    if (patterns.contains(design)) {
-        try designValidations.put(design, true);
-        return true;
+fn validateDesign(design: []const u8, patterns: *const std.StringHashMap(void), designValidations: *std.StringHashMap(usize)) !usize {
+    if (designValidations.get(design)) |validMoves| {
+        return validMoves;
     }
 
-    for (1..design.len + 1) |len| {
-        const possiblePattern = design[0..len];
-        if (patterns.contains(possiblePattern)) {
-            if (try validateDesign(design[len..], patterns, designValidations)) {
-                try designValidations.put(design, true);
-                return true;
-            }
+    for (1..design.len) |len| {
+        if (patterns.contains(design[0..len])) {
+            const possibilities = try validateDesign(design[len..], patterns, designValidations);
+            const entry = try designValidations.getOrPutValue(design, 0);
+            entry.value_ptr.* += possibilities;
         }
     }
 
-    try designValidations.put(design, false);
-    return false;
+    if (patterns.contains(design)) {
+        const entry = try designValidations.getOrPutValue(design, 0);
+        entry.value_ptr.* += 1;
+    }
+
+    return designValidations.get(design) orelse 0;
 }
 
 fn part1() !void {
@@ -40,19 +38,23 @@ fn part1() !void {
     while (patternsParseIter.next()) |pattern| {
         try patterns.put(pattern, {});
     }
-    var designValidations = std.StringHashMap(bool).init(gpa);
+    var designValidations = std.StringHashMap(usize).init(gpa);
     defer designValidations.deinit();
     var designsParseIter = std.mem.splitSequence(u8, questionPartsIter.next().?, "\n");
     var validCount: usize = 0;
+    var validSum: usize = 0;
     while (designsParseIter.next()) |design| {
-        if (try validateDesign(design, &patterns, &designValidations)) validCount += 1;
+        const possibilities = try validateDesign(design, &patterns, &designValidations);
+        if (possibilities > 0) {
+            validSum += possibilities;
+            validCount += 1;
+        }
     }
     std.debug.print("part1: {d}\n", .{validCount});
+    std.debug.print("part2: {d}\n", .{validSum});
 }
 
-fn part2() !void {
-    std.debug.print("part2: {d}\n", .{0});
-}
+fn part2() !void {}
 
 pub export fn day19() void {
     part1() catch unreachable;
