@@ -8,15 +8,11 @@ const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day20.txt"), "\n");
 
-fn manhattanDistance(p1: *const Point, p2: *const Point) usize {
-    return @abs(p1.x - p2.x) + @abs(p1.y - p2.y);
-}
-
 fn doPart(cheatDuration: isize, path: []Point) usize {
     var result: usize = 0;
     for (0..path.len - 100) |i| {
         for (i + 100..path.len) |j| {
-            const distance = manhattanDistance(&path[j], &path[i]);
+            const distance = path[j].distanceTo(path[i]);
             if (distance > cheatDuration) continue;
             if (j - i - distance >= 100) result += 1;
         }

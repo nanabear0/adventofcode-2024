@@ -13,6 +13,9 @@ pub const Point = struct {
     pub fn containedBy(self: *const Point, start: Point, end: Point) bool {
         return self.x >= start.x and self.x <= end.x and self.y >= start.y and self.y <= end.y;
     }
+    pub fn distanceTo(self: *const Point, other: Point) usize {
+        return @abs(self.x - other.x) + @abs(self.y - other.y);
+    }
 };
 
 pub const CardinalDirections = [4]Point{
