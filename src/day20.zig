@@ -8,26 +8,17 @@ const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day20.txt"), "\n");
 
-fn doPart(cheatDuration: isize, blockages: *std.AutoHashMap(Point, void), freeze: *std.AutoHashMap(Point, ?isize)) !usize {
+fn manhattanDistance(p1: *const Point, p2: *const Point) usize {
+    return @abs(p1.x - p2.x) + @abs(p1.y - p2.y);
+}
+
+fn doPart(cheatDuration: isize, path: []Point) usize {
     var result: usize = 0;
-    var freezeIter = freeze.iterator();
-    while (freezeIter.next()) |freezeEntry| {
-        const ylimit: isize = cheatDuration;
-        var yy: isize = -ylimit;
-        while (yy <= ylimit) : (yy += 1) {
-            const xlimit = cheatDuration - @as(isize, @intCast(@abs(yy)));
-            var xx: isize = -xlimit;
-            while (xx <= xlimit) : (xx += 1) {
-                const cheatCost: isize = @intCast(@abs(xx) + @abs(yy));
-                if (cheatCost <= 1) continue;
-
-                const cheatDestination = freezeEntry.key_ptr.add(Point{ .x = xx, .y = yy });
-                if (blockages.contains(cheatDestination)) continue;
-                if (freeze.get(cheatDestination) orelse null == null) continue;
-
-                const normalCost: isize = freeze.get(cheatDestination).?.? - freezeEntry.value_ptr.*.?;
-                if (normalCost - cheatCost >= 100) result += 1;
-            }
+    for (0..path.len - 100) |i| {
+        for (i + 100..path.len) |j| {
+            const distance = manhattanDistance(&path[j], &path[i]);
+            if (distance > cheatDuration) continue;
+            if (j - i - distance >= 100) result += 1;
         }
     }
 
@@ -35,12 +26,10 @@ fn doPart(cheatDuration: isize, blockages: *std.AutoHashMap(Point, void), freeze
 }
 
 fn doThing() !void {
-    var blockages = std.AutoHashMap(Point, void).init(gpa);
-    var freeze = std.AutoHashMap(Point, ?isize).init(gpa);
+    var freeze = std.AutoHashMap(Point, void).init(gpa);
     var start: Point = Point{ .x = 0, .y = 0 };
     var end: Point = Point{ .x = 0, .y = 0 };
     defer freeze.deinit();
-    defer blockages.deinit();
 
     var y: isize = 0;
     var inputIter = std.mem.splitSequence(u8, input, "\n");
@@ -49,42 +38,40 @@ fn doThing() !void {
             const point = Point{ .x = @intCast(x), .y = y };
             switch (char) {
                 '.' => {
-                    try freeze.put(point, null);
-                },
-                '#' => {
-                    try blockages.put(point, {});
+                    try freeze.put(point, {});
                 },
                 'S' => {
                     start = point;
-                    try freeze.put(point, 0);
+                    try freeze.put(point, {});
                 },
                 'E' => {
                     end = point;
-                    try freeze.put(point, null);
+                    try freeze.put(point, {});
                 },
-                else => unreachable,
+                else => {},
             }
         }
     }
 
-    var costerino: isize = 0;
+    var path = std.AutoArrayHashMap(Point, void).init(gpa);
+    defer path.deinit();
+    try path.put(start, {});
     var curr = start;
-    step: while (!curr.equals(end)) : (costerino += 1) {
+    step: while (!curr.equals(end)) {
         for (CardinalDirections) |dir| {
             const next = curr.add(dir);
-            if (blockages.contains(next)) continue;
             if (!freeze.contains(next)) continue;
-            if (freeze.get(next).? != null) continue;
+            if (path.contains(next)) continue;
 
-            try freeze.put(next, costerino + 1);
+            try path.put(next, {});
             curr = next;
             continue :step;
         }
         break;
     }
 
-    std.debug.print("part1: {}\n", .{try doPart(2, &blockages, &freeze)});
-    std.debug.print("part2: {}\n", .{try doPart(20, &blockages, &freeze)});
+    std.debug.print("part1: {}\n", .{doPart(2, path.keys())});
+    std.debug.print("part2: {}\n", .{doPart(20, path.keys())});
 }
 
 pub export fn day20() void {
