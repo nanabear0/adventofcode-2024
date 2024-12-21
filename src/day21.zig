@@ -119,7 +119,7 @@ fn getDist(a: u8, b: u8) usize {
 fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), getBestPossiblePathCache: *std.StringHashMap([]u8)) ![]u8 {
     if (getBestPossiblePathCache.contains(subCommand)) return getBestPossiblePathCache.get(subCommand).?;
 
-    std.debug.print("{s}\n", .{subCommand});
+    // std.debug.print("{s}\n", .{subCommand});
     var subPaths = std.ArrayList(std.ArrayList(u8)).init(gpa);
     try subPaths.append(std.ArrayList(u8).init(gpa));
     subPaths = try possiblePaths('A', subCommand[0], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
@@ -134,7 +134,6 @@ fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.Au
         var w_iter = std.mem.window(u8, subPath.items, 2, 1);
         while (w_iter.next()) |btns| {
             if (btns.len < 2) break;
-
             if (btns[0] != btns[1]) heur += getDist(btns[0], btns[1]);
         }
         if (heur < bestSubPathHeur) {
@@ -173,7 +172,7 @@ fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoA
         const subCommand = subCommandEntry.key_ptr.*;
         const subCommandCount = subCommandEntry.value_ptr.*;
         if (targetLevel == level) {
-            try levelCache.put(path, subCommand.len);
+            try levelCache.put(subCommand, subCommand.len);
             result += subCommandCount * subCommand.len;
             continue;
         }
@@ -181,7 +180,7 @@ fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoA
             result += levelCache.get(subCommand).? * subCommandCount;
             continue;
         }
-        std.debug.print("{s} {d}\n", .{ subCommand, level });
+        // std.debug.print("{s} {d}\n", .{ subCommand, level });
 
         const bestSubPath = try getBestPossiblePath(subCommand, level, numberGrid, inputGrid, getBestPossiblePathCache);
         const cost = try bestPath(bestSubPath, level + 1, targetLevel, numberGrid, inputGrid, bestPathCache, getBestPossiblePathCache);
