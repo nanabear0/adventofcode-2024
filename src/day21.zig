@@ -36,7 +36,8 @@ fn fillInputGrid() !std.AutoArrayHashMap(u8, Point) {
     return inputGrid;
 }
 
-fn addShortestPath(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point), paths: *std.ArrayList(std.ArrayList(u8)), isNumber: bool) !void {
+fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point), isNumber: bool, oldPaths: *std.ArrayList(std.ArrayList(u8))) !std.ArrayList(std.ArrayList(u8)) {
+    var paths = std.ArrayList(std.ArrayList(u8)).init(gpa);
     if (grid.get(start)) |p1| {
         if (grid.get(end)) |p2| {
             const moveX = p2.x - p1.x;
@@ -48,25 +49,25 @@ fn addShortestPath(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Poi
             const absMoveY = @abs(moveY);
             const path1valid = !pathEdge1.equals(invalidPoint);
             const path2valid = !pathEdge2.equals(invalidPoint);
-            const patshLen = paths.items.len;
-            for (0..patshLen) |i| {
-                var path = paths.items[i];
+            for (oldPaths.items) |*oldPath| {
+                var path1 = try oldPath.clone();
                 if (path1valid and path2valid) {
-                    try path.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
-                    try path.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
-                    var clone = std.ArrayList(u8).init(gpa);
-                    for (path.items) |p| try clone.append(p);
-                    try clone.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
-                    try clone.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
-                    try paths.append(clone);
+                    var path2 = try oldPath.clone();
+                    try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                    try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                    try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                    try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                    try paths.append(path1);
+                    try paths.append(path2);
                 } else {
-                    if (moveX > 0) {
-                        try path.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
-                        try path.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                    if (moveX > 0 or isNumber) {
+                        try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                        try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
                     } else {
-                        try path.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
-                        try path.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                        try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                        try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
                     }
+                    try paths.append(path1);
                 }
             }
         }
@@ -74,15 +75,42 @@ fn addShortestPath(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Poi
     for (paths.items) |*path| {
         try path.append('A');
     }
-}
-fn getTotalPathForString(str: []const u8, grid: *const std.AutoArrayHashMap(u8, Point), isNumberGrid: bool) !std.ArrayList(std.ArrayList(u8)) {
-    var paths = std.ArrayList(std.ArrayList(u8)).init(gpa);
-    try paths.append(std.ArrayList(u8).init(gpa));
-    try addShortestPath('A', str[0], grid, &paths, isNumberGrid);
-    for (1..str.len) |i| {
-        try addShortestPath(str[i - 1], str[i], grid, &paths, isNumberGrid);
+    for (oldPaths.items) |oldPath| {
+        oldPath.deinit();
     }
+    oldPaths.deinit();
     return paths;
+}
+
+fn bestPath(path: []const u8, level: usize, targetLevel: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), bestPathCache: *std.AutoHashMap(usize, std.StringHashMap(usize))) !usize {
+    if (!bestPathCache.contains(level)) try bestPathCache.put(level, std.StringHashMap(usize).init(gpa));
+    var levelCache = bestPathCache.get(level).?;
+
+    if (levelCache.contains(path)) return levelCache.get(path).?;
+    if (targetLevel == level) {
+        try levelCache.put(path, path.len);
+        return path.len;
+    }
+    var cost: usize = 0;
+    var calcPath = path[0..];
+    while (std.mem.indexOfScalar(u8, calcPath, 'A')) |aIndex| : (calcPath = calcPath[aIndex + 1 ..]) {
+        var subPaths = std.ArrayList(std.ArrayList(u8)).init(gpa);
+        try subPaths.append(std.ArrayList(u8).init(gpa));
+        subPaths = try possiblePaths('A', calcPath[0], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
+        for (1..calcPath.len) |i| {
+            subPaths = try possiblePaths(calcPath[i - 1], calcPath[i], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
+        }
+        var minCost: usize = std.math.maxInt(usize);
+        for (subPaths.items) |subPath| {
+            const subCost = try bestPath(subPath.items, level + 1, targetLevel, numberGrid, inputGrid, bestPathCache);
+            if (subCost < minCost) minCost = subCost;
+        }
+        cost += minCost;
+        if (aIndex == calcPath.len - 1) break;
+    }
+
+    try levelCache.put(path, cost);
+    return cost;
 }
 
 fn doThing() !void {
@@ -92,24 +120,11 @@ fn doThing() !void {
     defer inputGrid.deinit();
 
     var inputIter = std.mem.splitScalar(u8, input, '\n');
+    var bestPathCache = std.AutoHashMap(usize, std.StringHashMap(usize)).init(gpa);
+    defer bestPathCache.deinit();
     while (inputIter.next()) |line| {
-        const level0Paths = try getTotalPathForString(line, &numberGrid, true);
-        var level1Paths = std.ArrayList(std.ArrayList(u8)).init(gpa);
-        for (level0Paths.items) |level0Path| {
-            const tmp = try getTotalPathForString(level0Path.items, &inputGrid, false);
-            // _ = tmp;
-            try level1Paths.appendSlice(tmp.items[0..]);
-        }
-        var level2Paths = std.ArrayList(std.ArrayList(u8)).init(gpa);
-        for (level1Paths.items) |level1Path| {
-            const tmp = try getTotalPathForString(level1Path.items, &inputGrid, false);
-            // _ = tmp;
-            try level2Paths.appendSlice(tmp.items[0..]);
-        }
-        std.debug.print("\n==={s}===\n", .{line});
-        std.debug.print("{d} {s}\n", .{ level0Paths.items.len, level0Paths.items[0].items });
-        std.debug.print("{d} {s}\n", .{ level1Paths.items.len, level1Paths.items[0].items });
-        std.debug.print("{d} {s}\n", .{ level2Paths.items.len, level2Paths.items[0].items });
+        const cost = try bestPath(line, 0, 2, &numberGrid, &inputGrid, &bestPathCache);
+        std.debug.print("{s}: {d}\n", .{ line, cost });
     }
 }
 
