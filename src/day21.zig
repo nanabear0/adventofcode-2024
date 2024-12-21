@@ -118,6 +118,8 @@ fn getDist(a: u8, b: u8) usize {
 
 fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), getBestPossiblePathCache: *std.StringHashMap([]u8)) ![]u8 {
     if (getBestPossiblePathCache.contains(subCommand)) return getBestPossiblePathCache.get(subCommand).?;
+
+    std.debug.print("{s}\n", .{subCommand});
     var subPaths = std.ArrayList(std.ArrayList(u8)).init(gpa);
     try subPaths.append(std.ArrayList(u8).init(gpa));
     subPaths = try possiblePaths('A', subCommand[0], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
@@ -133,7 +135,6 @@ fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.Au
         while (w_iter.next()) |btns| {
             if (btns.len < 2) break;
 
-            // std.debug.print("{s}\n", .{subPath.items});
             if (btns[0] != btns[1]) heur += getDist(btns[0], btns[1]);
         }
         if (heur < bestSubPathHeur) {
@@ -161,6 +162,7 @@ fn splitCommandsFromA(path: []const u8) !std.StringHashMap(usize) {
 
 fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), bestPathCache: *std.AutoHashMap(usize, std.StringHashMap(usize)), getBestPossiblePathCache: *std.StringHashMap([]u8)) !usize {
     if (!bestPathCache.contains(level)) try bestPathCache.put(level, std.StringHashMap(usize).init(gpa));
+
     var levelCache = bestPathCache.get(level).?;
 
     var result: usize = 0;
@@ -175,7 +177,12 @@ fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoA
             result += subCommandCount * subCommand.len;
             continue;
         }
-        if (levelCache.contains(subCommand)) result = levelCache.get(subCommand).? * subCommandCount;
+        if (levelCache.contains(subCommand)) {
+            result += levelCache.get(subCommand).? * subCommandCount;
+            continue;
+        }
+        std.debug.print("{s} {d}\n", .{ subCommand, level });
+
         const bestSubPath = try getBestPossiblePath(subCommand, level, numberGrid, inputGrid, getBestPossiblePathCache);
         const cost = try bestPath(bestSubPath, level + 1, targetLevel, numberGrid, inputGrid, bestPathCache, getBestPossiblePathCache);
         try levelCache.put(subCommand, cost);
@@ -199,7 +206,7 @@ fn doThing() !void {
     defer bestPathCache.deinit();
     defer getBestPossiblePathCache.deinit();
     var result: usize = 0;
-    const hiddenLayers: usize = 20;
+    const hiddenLayers: usize = 2;
     while (inputIter.next()) |line| {
         const cost = try bestPath(@constCast(line), 0, hiddenLayers + 1, &numberGrid, &inputGrid, &bestPathCache, &getBestPossiblePathCache);
         result += try std.fmt.parseInt(usize, line[0 .. line.len - 1], 10) * cost;
