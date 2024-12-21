@@ -20,6 +20,8 @@ const day17 = @import("./day17.zig").day17;
 const day18 = @import("./day18.zig").day18;
 const day19 = @import("./day19.zig").day19;
 const day20 = @import("./day20.zig").day20;
+const day21 = @import("./day21.zig").day21;
+
 pub fn main() void {
     var timer = std.time.Timer.start() catch unreachable;
     {
@@ -42,7 +44,8 @@ pub fn main() void {
         // day17();
         // day18();
         // day19();
-        day20();
+        // day20();
+        day21();
     }
     const elapsed2: f64 = @floatFromInt(timer.read());
     std.debug.print("\nTime: {d:.3}ms\n", .{
