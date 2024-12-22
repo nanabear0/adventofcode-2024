@@ -25,15 +25,12 @@ fn generate(secret: usize) usize {
 
 fn doThing() !void {
     var inputIter = std.mem.splitScalar(u8, input, '\n');
-    var saleResults = std.AutoHashMap([4]isize, std.ArrayList(isize)).init(gpa);
+    var saleResults = std.AutoHashMap([4]isize, isize).init(gpa);
+    try saleResults.ensureTotalCapacity(19 * 19 * 19 * 19);
     var prices = try std.ArrayList(isize).initCapacity(gpa, 2001);
     var changes = try std.ArrayList(isize).initCapacity(gpa, 2001);
     var foundSales = std.AutoHashMap([4]isize, void).init(gpa);
     defer saleResults.deinit();
-    defer {
-        var saleResultsIter = saleResults.valueIterator();
-        while (saleResultsIter.next()) |list| list.deinit();
-    }
     defer prices.deinit();
     defer changes.deinit();
     defer foundSales.deinit();
@@ -64,16 +61,14 @@ fn doThing() !void {
             };
             if (foundSales.contains(seq)) continue;
             try foundSales.put(seq, {});
-            if (!saleResults.contains(seq)) try saleResults.put(seq, std.ArrayList(isize).init(gpa));
-            try saleResults.getPtr(seq).?.append(prices.items[i]);
+            const entry = try saleResults.getOrPutValue(seq, 0);
+            entry.value_ptr.* += prices.items[i];
         }
     }
     var p2Result: isize = 0;
-    var saleResultsIter = saleResults.iterator();
+    var saleResultsIter = saleResults.valueIterator();
     while (saleResultsIter.next()) |sales| {
-        var sum: isize = 0;
-        for (sales.value_ptr.items) |sale| sum += sale;
-        if (p2Result < sum) p2Result = sum;
+        if (p2Result < sales.*) p2Result = sales.*;
     }
     std.debug.print("part1: {d}\n", .{p1Result});
     std.debug.print("part2: {d}\n", .{p2Result});
