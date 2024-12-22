@@ -75,77 +75,17 @@ fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point
     for (paths.items) |*path| {
         try path.append('A');
     }
-    for (oldPaths.items) |oldPath| {
-        oldPath.deinit();
-    }
-    oldPaths.deinit();
     return paths;
 }
 
-fn getDist(a: u8, b: u8) usize {
-    if (a == b) return 0;
-
-    if (a == '<') {
-        if (b == '>') return 3;
-        if (b == 'v') return 2;
-        if (b == '^') return 3;
-        if (b == 'A') return 4;
-    }
-
-    if (a == '>') {
-        if (b == '<') return 3;
-        if (b == 'v') return 2;
-        if (b == '^') return 3;
-        if (b == 'A') return 2;
-    }
-
-    if (a == '^') {
-        if (b == '<') return 3;
-        if (b == 'v') return 2;
-        if (b == '>') return 3;
-        if (b == 'A') return 2;
-    }
-
-    if (a == 'v') {
-        if (b == 'A') return 3;
-        return 2;
-    }
-    return 0;
-
-    // std.debug.print("{c} {c}\n", .{ a, b });
-    // unreachable;
-}
-
-fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), getBestPossiblePathCache: *std.StringHashMap([]u8)) ![]u8 {
-    if (getBestPossiblePathCache.contains(subCommand)) return getBestPossiblePathCache.get(subCommand).?;
-
-    // std.debug.print("{s}\n", .{subCommand});
+fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point)) !std.ArrayList(std.ArrayList(u8)) {
     var subPaths = std.ArrayList(std.ArrayList(u8)).init(gpa);
     try subPaths.append(std.ArrayList(u8).init(gpa));
     subPaths = try possiblePaths('A', subCommand[0], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
     for (1..subCommand.len) |i| {
         subPaths = try possiblePaths(subCommand[i - 1], subCommand[i], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
     }
-
-    var bestSubPath: ?std.ArrayList(u8) = null;
-    var bestSubPathHeur: usize = std.math.maxInt(usize);
-    for (subPaths.items) |subPath| {
-        var heur: usize = 0;
-        var w_iter = std.mem.window(u8, subPath.items, 2, 1);
-        while (w_iter.next()) |btns| {
-            if (btns.len < 2) break;
-            if (btns[0] != btns[1]) heur += getDist(btns[0], btns[1]);
-        }
-        if (heur < bestSubPathHeur) {
-            if (bestSubPath != null) bestSubPath.?.deinit();
-            bestSubPath = subPath;
-            bestSubPathHeur = heur;
-        } else {
-            subPath.deinit();
-        }
-    }
-    try getBestPossiblePathCache.put(subCommand, bestSubPath.?.items);
-    return bestSubPath.?.items;
+    return subPaths;
 }
 
 fn splitCommandsFromA(path: []const u8) !std.StringHashMap(usize) {
@@ -159,9 +99,9 @@ fn splitCommandsFromA(path: []const u8) !std.StringHashMap(usize) {
     return subCommands;
 }
 
-fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), bestPathCache: *std.AutoHashMap(usize, std.StringHashMap(usize)), getBestPossiblePathCache: *std.StringHashMap([]u8)) !usize {
+fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point), bestPathCache: *std.AutoHashMap(usize, std.StringHashMap(usize))) !usize {
     if (!bestPathCache.contains(level)) try bestPathCache.put(level, std.StringHashMap(usize).init(gpa));
-    var levelCache = bestPathCache.get(level).?;
+    var levelCache = bestPathCache.getPtr(level).?;
     var result: usize = 0;
     var subCommands = try splitCommandsFromA(path);
     var subCommandsIter = subCommands.iterator();
@@ -177,16 +117,24 @@ fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoA
             result += levelCache.get(subCommand).? * subCommandCount;
             continue;
         }
-        std.debug.print("cache miss {s} {d}\n", .{ subCommand, level });
 
-        const bestSubPath = try getBestPossiblePath(subCommand, level, numberGrid, inputGrid, getBestPossiblePathCache);
-        const cost = try bestPath(bestSubPath, level + 1, targetLevel, numberGrid, inputGrid, bestPathCache, getBestPossiblePathCache);
-        std.debug.print("cache update {s} {d}\n", .{ subCommand, level });
-        try levelCache.put(subCommand, cost);
-        result += cost * subCommandCount;
+        const bestSubPaths = try getBestPossiblePath(subCommand, level, numberGrid, inputGrid);
+        var lowestCost: usize = std.math.maxInt(usize);
+        for (bestSubPaths.items) |bestSubPath| {
+            const cost = try bestPath(bestSubPath.items, level + 1, targetLevel, numberGrid, inputGrid, bestPathCache);
+            if (cost < lowestCost) lowestCost = cost;
+        }
+        try levelCache.put(try cloneSlice(u8, &gpa, subCommand), lowestCost);
+        result += lowestCost * subCommandCount;
     }
-    try levelCache.put(path, result);
+    try levelCache.put(try cloneSlice(u8, &gpa, path), result);
     return result;
+}
+
+fn cloneSlice(comptime T: type, allocator: *const std.mem.Allocator, slice: []const T) ![]T {
+    const newSlice = try allocator.alloc(T, slice.len);
+    std.mem.copyForwards(T, newSlice, slice);
+    return newSlice;
 }
 
 fn doThing() !void {
@@ -197,13 +145,12 @@ fn doThing() !void {
 
     var inputIter = std.mem.splitScalar(u8, input, '\n');
     var bestPathCache = std.AutoHashMap(usize, std.StringHashMap(usize)).init(gpa);
-    var getBestPossiblePathCache = std.StringHashMap([]u8).init(gpa);
     defer bestPathCache.deinit();
-    defer getBestPossiblePathCache.deinit();
     var result: usize = 0;
-    const hiddenLayers: usize = 15;
+    const hiddenLayers: usize = 25;
+    try bestPathCache.ensureUnusedCapacity(hiddenLayers + 2);
     while (inputIter.next()) |line| {
-        const cost = try bestPath(@constCast(line), 0, hiddenLayers + 1, &numberGrid, &inputGrid, &bestPathCache, &getBestPossiblePathCache);
+        const cost = try bestPath(@constCast(line), 0, hiddenLayers + 1, &numberGrid, &inputGrid, &bestPathCache);
         result += try std.fmt.parseInt(usize, line[0 .. line.len - 1], 10) * cost;
     }
     std.debug.print("part1: {d}", .{result});
