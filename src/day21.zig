@@ -138,17 +138,11 @@ fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoA
             const cost = try bestPath(@constCast(bestSubPath.*), level + 1, targetLevel, numberGrid, inputGrid, bestPathCache);
             if (cost < lowestCost) lowestCost = cost;
         }
-        try levelCache.put(try cloneSlice(u8, &gpa, subCommand), lowestCost);
+        try levelCache.put(subCommand, lowestCost);
         result += lowestCost * subCommandCount;
     }
-    try levelCache.put(try cloneSlice(u8, &gpa, path), result);
+    try levelCache.put(path, result);
     return result;
-}
-
-fn cloneSlice(comptime T: type, allocator: *const std.mem.Allocator, slice: []const T) ![]T {
-    const newSlice = try allocator.alloc(T, slice.len);
-    std.mem.copyForwards(T, newSlice, slice);
-    return newSlice;
 }
 
 fn doThing(hiddenLayers: usize) !usize {
