@@ -78,7 +78,6 @@ fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point
                         try path2.append(if (moveY > 0) 'v' else '^');
                         try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX - 1);
                         try paths.append(path2);
-                        // std.debug.print("3 start: {c}, end: {c}: paths: {s} _ {s}\n", .{ start, end, path1.items[oldPath.items.len..], path2.items[oldPath.items.len..] });
                     }
                     try paths.append(path1);
                 }
