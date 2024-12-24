@@ -3,7 +3,7 @@ const mvzr = @import("mvzr");
 const Point = @import("utils.zig").Point;
 const CardinalDirections = @import("utils.zig").CardinalDirections;
 
-var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+var gpa_impl = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 const gpa = gpa_impl.allocator();
 
 const input = std.mem.trim(u8, @embedFile("inputs/day21.txt"), "\n");
@@ -36,8 +36,8 @@ fn fillInputGrid() !std.AutoArrayHashMap(u8, Point) {
     return inputGrid;
 }
 
-fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point), isNumber: bool, oldPaths: *std.ArrayList(std.ArrayList(u8))) !std.ArrayList(std.ArrayList(u8)) {
-    var paths = std.ArrayList(std.ArrayList(u8)).init(gpa);
+fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point), isNumber: bool, oldPaths: *std.StringHashMap(void)) !std.StringHashMap(void) {
+    var paths = std.StringHashMap(void).init(gpa);
     if (grid.get(start)) |p1| {
         if (grid.get(end)) |p2| {
             const moveX = p2.x - p1.x;
@@ -49,50 +49,51 @@ fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point
             const absMoveY = @abs(moveY);
             const path1valid = !pathEdge1.equals(invalidPoint);
             const path2valid = !pathEdge2.equals(invalidPoint);
-            for (oldPaths.items) |*oldPath| {
-                var path1 = try oldPath.clone();
+            var oldPathsIter = oldPaths.keyIterator();
+            while (oldPathsIter.next()) |oldPath| {
+                var path1 = std.ArrayList(u8).init(gpa);
+                try path1.appendSlice(oldPath.*);
                 if (path1valid and path2valid) {
-                    var path2 = try oldPath.clone();
+                    var path2 = std.ArrayList(u8).init(gpa);
+                    try path2.appendSlice(oldPath.*);
                     try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
                     try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
                     try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
                     try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
-                    try paths.append(path1);
-                    try paths.append(path2);
+                    try path1.append('A');
+                    try path2.append('A');
+                    try paths.put(try path1.toOwnedSlice(), {});
+                    try paths.put(try path2.toOwnedSlice(), {});
                 } else {
+                    var path2 = std.ArrayList(u8).init(gpa);
+                    try path2.appendSlice(oldPath.*);
                     if (moveX < 0) {
                         try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
                         try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
-                        var path2 = try oldPath.clone();
-                        try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX - 1);
-                        try path2.append(if (moveY > 0) 'v' else '^');
-                        try path2.append(if (moveX > 0) '>' else '<');
-                        try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY - 1);
-                        try paths.append(path2);
+                        try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                        try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                        std.mem.swap(u8, &path2.items[@intCast(oldPath.len + absMoveX - 1)], &path2.items[@intCast(oldPath.len + absMoveX)]);
                     } else {
                         try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
                         try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
-                        var path2 = try oldPath.clone();
-                        try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY - 1);
-                        try path2.append(if (moveX > 0) '>' else '<');
-                        try path2.append(if (moveY > 0) 'v' else '^');
-                        try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX - 1);
-                        try paths.append(path2);
+                        try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                        try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                        std.mem.swap(u8, &path2.items[@intCast(oldPath.len + absMoveY - 1)], &path2.items[@intCast(oldPath.len + absMoveY)]);
                     }
-                    try paths.append(path1);
+                    try path1.append('A');
+                    try path2.append('A');
+                    try paths.put(try path1.toOwnedSlice(), {});
+                    try paths.put(try path2.toOwnedSlice(), {});
                 }
             }
         }
     }
-    for (paths.items) |*path| {
-        try path.append('A');
-    }
     return paths;
 }
 
-fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point)) !std.ArrayList(std.ArrayList(u8)) {
-    var subPaths = std.ArrayList(std.ArrayList(u8)).init(gpa);
-    try subPaths.append(std.ArrayList(u8).init(gpa));
+fn getBestPossiblePath(subCommand: []const u8, level: usize, numberGrid: *std.AutoArrayHashMap(u8, Point), inputGrid: *std.AutoArrayHashMap(u8, Point)) !std.StringHashMap(void) {
+    var subPaths = std.StringHashMap(void).init(gpa);
+    try subPaths.put("", {});
     subPaths = try possiblePaths('A', subCommand[0], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
     for (1..subCommand.len) |i| {
         subPaths = try possiblePaths(subCommand[i - 1], subCommand[i], if (level == 0) numberGrid else inputGrid, level == 0, &subPaths);
@@ -130,10 +131,11 @@ fn bestPath(path: []u8, level: usize, targetLevel: usize, numberGrid: *std.AutoA
             continue;
         }
 
-        const bestSubPaths = try getBestPossiblePath(subCommand, level, numberGrid, inputGrid);
+        var bestSubPaths = try getBestPossiblePath(subCommand, level, numberGrid, inputGrid);
         var lowestCost: usize = std.math.maxInt(usize);
-        for (bestSubPaths.items) |bestSubPath| {
-            const cost = try bestPath(bestSubPath.items, level + 1, targetLevel, numberGrid, inputGrid, bestPathCache);
+        var bestSubPathsIter = bestSubPaths.keyIterator();
+        while (bestSubPathsIter.next()) |bestSubPath| {
+            const cost = try bestPath(@constCast(bestSubPath.*), level + 1, targetLevel, numberGrid, inputGrid, bestPathCache);
             if (cost < lowestCost) lowestCost = cost;
         }
         try levelCache.put(try cloneSlice(u8, &gpa, subCommand), lowestCost);
