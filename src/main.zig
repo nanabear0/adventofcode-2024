@@ -48,10 +48,10 @@ pub fn main() void {
         // day18();
         // day19();
         // day20();
-        // day21();
+        day21();
         // day22();
         // day23();
-        day24();
+        // day24();
     }
     const elapsed2: f64 = @floatFromInt(timer.read());
     std.debug.print("\nTime: {d:.3}ms\n", .{

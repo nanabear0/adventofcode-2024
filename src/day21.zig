@@ -60,12 +60,25 @@ fn possiblePaths(start: u8, end: u8, grid: *const std.AutoArrayHashMap(u8, Point
                     try paths.append(path1);
                     try paths.append(path2);
                 } else {
-                    if (moveX > 0 and isNumber) {
-                        try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                    if (moveX < 0) {
                         try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                        try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                        var path2 = try oldPath.clone();
+                        try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX - 1);
+                        try path2.append(if (moveY > 0) 'v' else '^');
+                        try path2.append(if (moveX > 0) '>' else '<');
+                        try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY - 1);
+                        try paths.append(path2);
                     } else {
-                        try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
                         try path1.appendNTimes(if (moveX > 0) '>' else '<', absMoveX);
+                        try path1.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY);
+                        var path2 = try oldPath.clone();
+                        try path2.appendNTimes(if (moveY > 0) 'v' else '^', absMoveY - 1);
+                        try path2.append(if (moveX > 0) '>' else '<');
+                        try path2.append(if (moveY > 0) 'v' else '^');
+                        try path2.appendNTimes(if (moveX > 0) '>' else '<', absMoveX - 1);
+                        try paths.append(path2);
+                        // std.debug.print("3 start: {c}, end: {c}: paths: {s} _ {s}\n", .{ start, end, path1.items[oldPath.items.len..], path2.items[oldPath.items.len..] });
                     }
                     try paths.append(path1);
                 }
@@ -137,7 +150,7 @@ fn cloneSlice(comptime T: type, allocator: *const std.mem.Allocator, slice: []co
     return newSlice;
 }
 
-fn doThing() !void {
+fn doThing(hiddenLayers: usize) !usize {
     var numberGrid = try fillNumberGrid();
     defer numberGrid.deinit();
     var inputGrid = try fillInputGrid();
@@ -147,15 +160,15 @@ fn doThing() !void {
     var bestPathCache = std.AutoHashMap(usize, std.StringHashMap(usize)).init(gpa);
     defer bestPathCache.deinit();
     var result: usize = 0;
-    const hiddenLayers: usize = 25;
-    try bestPathCache.ensureUnusedCapacity(hiddenLayers + 2);
+    try bestPathCache.ensureUnusedCapacity(@intCast(hiddenLayers + 2));
     while (inputIter.next()) |line| {
         const cost = try bestPath(@constCast(line), 0, hiddenLayers + 1, &numberGrid, &inputGrid, &bestPathCache);
         result += try std.fmt.parseInt(usize, line[0 .. line.len - 1], 10) * cost;
     }
-    std.debug.print("part1: {d}", .{result});
+    return result;
 }
 
 pub export fn day21() void {
-    doThing() catch unreachable;
+    std.debug.print("part1: {d}\n", .{doThing(2) catch unreachable});
+    std.debug.print("part2: {d}\n", .{doThing(25) catch unreachable});
 }
