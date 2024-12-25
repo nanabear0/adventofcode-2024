@@ -36,7 +36,7 @@ fn doThing() !void {
     defer mapperino.deinit();
     var printBuffer = std.ArrayList(u8).init(gpa);
     defer printBuffer.deinit();
-    for (0..10000) |i| {
+    for (0..7858) |i| {
         mapperino.clearRetainingCapacity();
         for (robots.items) |*robot| {
             robot.move(boundary);
@@ -55,24 +55,30 @@ fn doThing() !void {
 
         var result: usize = 1;
         for (sums) |sum| result *= sum;
-        std.debug.print("at {d}, sum is:{d}, map:\n", .{ i + 1, result });
-
-        printBuffer.clearRetainingCapacity();
-        const writer = printBuffer.writer();
-        for (0..boundary.y) |y| {
-            for (0..boundary.x) |x| {
-                if (mapperino.get(Point{ .x = @intCast(x), .y = @intCast(y) })) |count| {
-                    try writer.print("{d}", .{count});
-                } else {
-                    try writer.print(".", .{});
-                }
-            }
-            try writer.print("\n", .{});
+        if (i == 100) {
+            std.debug.print("part 1: {d}\n", .{result});
         }
-        std.debug.print("{s}\n", .{printBuffer.items});
+
+        // std.debug.print("at {d}, sum is:{d}, map:\n", .{ i + 1, result });
+        // printBuffer.clearRetainingCapacity();
+        // const writer = printBuffer.writer();
+        // for (0..boundary.y) |y| {
+        //     for (0..boundary.x) |x| {
+        //         if (mapperino.get(Point{ .x = @intCast(x), .y = @intCast(y) })) |count| {
+        //             try writer.print("{d}", .{count});
+        //         } else {
+        //             try writer.print(".", .{});
+        //         }
+        //     }
+        //     try writer.print("\n", .{});
+        // }
+        // std.debug.print("{s}\n", .{printBuffer.items});
     }
+    std.debug.print("part2: 7858\n", .{});
 }
 
 pub export fn day14() void {
+    std.debug.print("-day14-\n", .{});
+
     doThing() catch unreachable;
 }

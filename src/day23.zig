@@ -104,6 +104,7 @@ fn part2() !void {
     for (result.items[1..]) |r| {
         std.debug.print(",{s}", .{r});
     }
+    std.debug.print("\n", .{});
 }
 
 fn fillMap() !std.StringHashMap(std.StringArrayHashMap(void)) {
@@ -158,10 +159,11 @@ fn part1() !void {
         }
     }
 
-    std.debug.print("\npart1: {d}\n", .{result});
+    std.debug.print("part1: {d}\n", .{result});
 }
 
 pub export fn day23() void {
+    std.debug.print("-day23-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;
 }

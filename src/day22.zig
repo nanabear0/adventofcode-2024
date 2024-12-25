@@ -75,5 +75,6 @@ fn doThing() !void {
 }
 
 pub export fn day22() void {
+    std.debug.print("-day22-\n", .{});
     doThing() catch unreachable;
 }

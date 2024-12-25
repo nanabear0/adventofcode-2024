@@ -71,10 +71,8 @@ fn part1() !void {
         }
     }
 
-    // print(robotto.?, x, y, walls, boxes);
     while (inputIter.next()) |instructionLine| {
         for (instructionLine) |instruction| {
-            // std.debug.print("move {c}\n", .{instruction});
             const dir = switch (instruction) {
                 '^' => Point{ .x = 0, .y = -1 },
                 '>' => Point{ .x = 1, .y = 0 },
@@ -90,7 +88,6 @@ fn part1() !void {
             } else {
                 robotto = moveTo;
             }
-            // print(robotto.?, x, y, walls, boxes);
         }
     }
 
@@ -183,10 +180,8 @@ fn part2() !void {
         }
     }
 
-    // printP2(robotto.?, x, y, walls, boxes);
     while (inputIter.next()) |instructionLine| {
         for (instructionLine) |instruction| {
-            // std.debug.print("move {c}\n", .{instruction});
             const dir = switch (instruction) {
                 '^' => Point{ .x = 0, .y = -1 },
                 '>' => Point{ .x = 1, .y = 0 },
@@ -211,7 +206,6 @@ fn part2() !void {
             } else {
                 robotto = moveTo;
             }
-            // printP2(robotto.?, x, y, walls, boxes);
         }
     }
 
@@ -224,6 +218,7 @@ fn part2() !void {
 }
 
 pub export fn day15() void {
+    std.debug.print("-day15-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;
 }

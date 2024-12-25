@@ -37,7 +37,6 @@ fn addbaby(swaps: *std.StringHashMap([]const u8), isP1: bool) !usize {
             else => unreachable,
         };
         const b = iter.next().?;
-        // b = swaps.get(b) orelse b;
         _ = iter.next().?;
         var out = iter.next().?;
         out = swaps.get(out) orelse out;
@@ -173,6 +172,7 @@ fn calc(in: []const u8, gates: *std.StringHashMap(Gate), values: *std.StringHash
 }
 
 pub export fn day24() void {
+    std.debug.print("-day24-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;
 }

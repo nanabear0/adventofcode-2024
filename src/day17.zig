@@ -22,22 +22,18 @@ fn runCode(operations: std.ArrayList(usize), initialA: usize) !std.ArrayList(usi
     var insPointer: usize = 0;
     while (insPointer < operations.items.len) {
         switch (operations.items[insPointer]) {
-            // adv
             0 => {
                 if (insPointer == operations.items.len - 1) break;
                 registers[0] = registers[0] >> @intCast(getCombo(operations.items[insPointer + 1], registers));
             },
-            // bxl
             1 => {
                 if (insPointer == operations.items.len - 1) break;
                 registers[1] = registers[1] ^ operations.items[insPointer + 1];
             },
-            // bst
             2 => {
                 if (insPointer == operations.items.len - 1) break;
                 registers[1] = getCombo(operations.items[insPointer + 1], registers) % 8;
             },
-            // jnz
             3 => {
                 if (registers[0] != 0) {
                     if (insPointer == operations.items.len - 1) break;
@@ -45,22 +41,18 @@ fn runCode(operations: std.ArrayList(usize), initialA: usize) !std.ArrayList(usi
                     continue;
                 }
             },
-            // bxc
             4 => {
                 if (insPointer == operations.items.len - 1) break;
                 registers[1] = registers[1] ^ registers[2];
             },
-            // out
             5 => {
                 if (insPointer == operations.items.len - 1) break;
                 try outputBuffer.append(getCombo(operations.items[insPointer + 1], registers) % 8);
             },
-            // bdv
             6 => {
                 if (insPointer == operations.items.len - 1) break;
                 registers[1] = registers[0] >> @intCast(getCombo(operations.items[insPointer + 1], registers));
             },
-            // cdv
             7 => {
                 if (insPointer == operations.items.len - 1) break;
                 registers[2] = registers[0] >> @intCast(getCombo(operations.items[insPointer + 1], registers));
@@ -131,10 +123,11 @@ fn part2() !void {
     }
 
     const smallest = std.mem.min(usize, searchList.items);
-    std.debug.print("part2: {d}", .{smallest});
+    std.debug.print("part2: {d}\n", .{smallest});
 }
 
 pub export fn day17() void {
+    std.debug.print("-day17-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;
 }
