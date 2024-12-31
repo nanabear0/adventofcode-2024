@@ -117,7 +117,7 @@ fn doThing() !void {
     std.debug.print("part2: {any}\n", .{pointsOnBestPaths.count()});
 }
 
-pub export fn day16() void {
+pub fn day16() void {
     std.debug.print("-day16-\n", .{});
     doThing() catch unreachable;
 }

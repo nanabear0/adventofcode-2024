@@ -70,7 +70,7 @@ fn doThing() !void {
     std.debug.print("part2: {}\n", .{doPart(20, path.keys())});
 }
 
-pub export fn day20() void {
+pub fn day20() void {
     std.debug.print("-day20-\n", .{});
     doThing() catch unreachable;
 }

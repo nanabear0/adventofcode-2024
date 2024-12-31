@@ -26,37 +26,44 @@ const day23 = @import("./day23.zig").day23;
 const day24 = @import("./day24.zig").day24;
 const day25 = @import("./day25.zig").day25;
 
-pub fn main() void {
+fn withTimeReport(comptime do: fn () void) void {
     var timer = std.time.Timer.start() catch unreachable;
-    {
-        day01();
-        day02();
-        day03();
-        day04();
-        day05();
-        day06();
-        day07();
-        day08();
-        day09();
-        day10();
-        day11();
-        day12();
-        day13();
-        day14();
-        day15();
-        day16();
-        day17();
-        day18();
-        day19();
-        day20();
-        day21();
-        day22();
-        day23();
-        day24();
-        day25();
-    }
+    do();
     const elapsed2: f64 = @floatFromInt(timer.read());
-    std.debug.print("\nTime: {d:.3}ms\n", .{
+    std.debug.print("Time: {d:.3}ms\n\n", .{
+        elapsed2 / std.time.ns_per_ms,
+    });
+}
+
+pub fn main() !void {
+    var timer = std.time.Timer.start() catch unreachable;
+    withTimeReport(day01);
+    withTimeReport(day02);
+    withTimeReport(day03);
+    withTimeReport(day04);
+    withTimeReport(day05);
+    withTimeReport(day06);
+    withTimeReport(day07);
+    withTimeReport(day08);
+    withTimeReport(day09);
+    withTimeReport(day10);
+    withTimeReport(day11);
+    withTimeReport(day12);
+    withTimeReport(day13);
+    withTimeReport(day14);
+    withTimeReport(day15);
+    withTimeReport(day16);
+    withTimeReport(day17);
+    withTimeReport(day18);
+    withTimeReport(day19);
+    withTimeReport(day20);
+    withTimeReport(day21);
+    withTimeReport(day22);
+    withTimeReport(day23);
+    withTimeReport(day24);
+    withTimeReport(day25);
+    const elapsed2: f64 = @floatFromInt(timer.read());
+    std.debug.print("Total Time: {d:.3}ms\n\n", .{
         elapsed2 / std.time.ns_per_ms,
     });
 }

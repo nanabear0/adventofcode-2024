@@ -57,7 +57,7 @@ fn addbaby(swaps: *std.StringHashMap([]const u8), isP1: bool) !usize {
 }
 
 fn part2() !void {
-    var inputIter = std.mem.splitSequence(u8, input, "\n\n");
+    var inputIter = std.mem.splitSequence(u8, inputP2, "\n\n");
     const inputInitialValues = inputIter.next().?;
     const inputGates = inputIter.next().?;
     var xs = std.PriorityQueue([]const u8, void, strCompare).init(gpa, {});
@@ -171,7 +171,7 @@ fn calc(in: []const u8, gates: *std.StringHashMap(Gate), values: *std.StringHash
     }
 }
 
-pub export fn day24() void {
+pub fn day24() void {
     std.debug.print("-day24-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;

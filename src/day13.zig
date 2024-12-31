@@ -42,7 +42,7 @@ fn doThing(bigboi: bool) !isize {
     return tokens;
 }
 
-pub export fn day13() void {
+pub fn day13() void {
     std.debug.print("-day13-\n", .{});
     std.debug.print("part1: {any}\n", .{doThing(false) catch unreachable});
     std.debug.print("part2: {any}\n", .{doThing(true) catch unreachable});

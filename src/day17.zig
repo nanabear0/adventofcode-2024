@@ -126,7 +126,7 @@ fn part2() !void {
     std.debug.print("part2: {d}\n", .{smallest});
 }
 
-pub export fn day17() void {
+pub fn day17() void {
     std.debug.print("-day17-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;

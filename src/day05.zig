@@ -105,7 +105,7 @@ fn part2() !void {
     std.debug.print("part2: {d}\n", .{acc});
 }
 
-pub export fn day05() void {
+pub fn day05() void {
     std.debug.print("-day05-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;

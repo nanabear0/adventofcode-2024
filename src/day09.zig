@@ -85,7 +85,7 @@ fn part2() !void {
     std.debug.print("part2: {any}\n", .{checksum(blocks.items)});
 }
 
-pub export fn day09() void {
+pub fn day09() void {
     std.debug.print("-day09-\n", .{});
 
     part1() catch unreachable;

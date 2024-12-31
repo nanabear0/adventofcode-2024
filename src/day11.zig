@@ -45,7 +45,7 @@ fn doThing(blinks: usize) !usize {
     return result;
 }
 
-pub export fn day11() void {
+pub fn day11() void {
     std.debug.print("-day11-\n", .{});
 
     std.debug.print("part1: {any}\n", .{doThing(25) catch unreachable});

@@ -36,7 +36,7 @@ fn doThing() !void {
     defer mapperino.deinit();
     var printBuffer = std.ArrayList(u8).init(gpa);
     defer printBuffer.deinit();
-    for (0..7858) |i| {
+    keeptrying: for (1..10000) |i| {
         mapperino.clearRetainingCapacity();
         for (robots.items) |*robot| {
             robot.move(boundary);
@@ -44,40 +44,36 @@ fn doThing() !void {
             mapPos.value_ptr.* += 1;
         }
 
-        var sums = [4]usize{ 0, 0, 0, 0 };
-        const midPoint = Point{ .x = @divTrunc(boundary.x, 2), .y = @divTrunc(boundary.y, 2) };
-        for (robots.items) |robot| {
-            if (robot.p.x < midPoint.x and robot.p.y < midPoint.y) sums[0] += 1;
-            if (robot.p.x < midPoint.x and robot.p.y > midPoint.y) sums[1] += 1;
-            if (robot.p.x > midPoint.x and robot.p.y < midPoint.y) sums[2] += 1;
-            if (robot.p.x > midPoint.x and robot.p.y > midPoint.y) sums[3] += 1;
+        var mapperinoIter = mapperino.keyIterator();
+        while (mapperinoIter.next()) |pointo| {
+            var p = pointo.*;
+            var c: usize = 0;
+            while (mapperino.contains(p)) : (c += 1) {
+                if (c == 6) {
+                    std.debug.print("part2: {d}\n", .{i});
+                    break :keeptrying;
+                }
+                p = p.add(Point{ .x = 1, .y = 0 });
+            }
         }
-
-        var result: usize = 1;
-        for (sums) |sum| result *= sum;
         if (i == 100) {
-            std.debug.print("part 1: {d}\n", .{result});
-        }
+            var sums = [4]usize{ 0, 0, 0, 0 };
+            const midPoint = Point{ .x = @divTrunc(boundary.x, 2), .y = @divTrunc(boundary.y, 2) };
+            for (robots.items) |robot| {
+                if (robot.p.x < midPoint.x and robot.p.y < midPoint.y) sums[0] += 1;
+                if (robot.p.x < midPoint.x and robot.p.y > midPoint.y) sums[1] += 1;
+                if (robot.p.x > midPoint.x and robot.p.y < midPoint.y) sums[2] += 1;
+                if (robot.p.x > midPoint.x and robot.p.y > midPoint.y) sums[3] += 1;
+            }
 
-        // std.debug.print("at {d}, sum is:{d}, map:\n", .{ i + 1, result });
-        // printBuffer.clearRetainingCapacity();
-        // const writer = printBuffer.writer();
-        // for (0..boundary.y) |y| {
-        //     for (0..boundary.x) |x| {
-        //         if (mapperino.get(Point{ .x = @intCast(x), .y = @intCast(y) })) |count| {
-        //             try writer.print("{d}", .{count});
-        //         } else {
-        //             try writer.print(".", .{});
-        //         }
-        //     }
-        //     try writer.print("\n", .{});
-        // }
-        // std.debug.print("{s}\n", .{printBuffer.items});
+            var result: usize = 1;
+            for (sums) |sum| result *= sum;
+            std.debug.print("part1: {d}\n", .{result});
+        }
     }
-    std.debug.print("part2: 7858\n", .{});
 }
 
-pub export fn day14() void {
+pub fn day14() void {
     std.debug.print("-day14-\n", .{});
 
     doThing() catch unreachable;

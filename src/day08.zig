@@ -56,7 +56,7 @@ fn doThing(repeatingAntiNodes: bool) !usize {
     return antiNodes.count();
 }
 
-pub export fn day08() void {
+pub fn day08() void {
     std.debug.print("-day08-\n", .{});
 
     std.debug.print("part1: {d}\n", .{doThing(false) catch unreachable});

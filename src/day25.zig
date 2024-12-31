@@ -39,7 +39,7 @@ fn part1() !void {
     std.debug.print("part1: {d}\n", .{result});
 }
 
-pub export fn day25() void {
+pub fn day25() void {
     std.debug.print("-day25-\n", .{});
     part1() catch unreachable;
 }

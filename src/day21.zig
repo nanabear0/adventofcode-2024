@@ -163,7 +163,7 @@ fn doThing(hiddenLayers: usize) !usize {
     return result;
 }
 
-pub export fn day21() void {
+pub fn day21() void {
     std.debug.print("-day21-\n", .{});
     std.debug.print("part1: {d}\n", .{doThing(2) catch unreachable});
     std.debug.print("part2: {d}\n", .{doThing(25) catch unreachable});

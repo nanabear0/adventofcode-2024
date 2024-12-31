@@ -97,7 +97,7 @@ fn part2() !void {
     std.debug.print("part2: {d}\n", .{x_masCount});
 }
 
-pub export fn day04() void {
+pub fn day04() void {
     std.debug.print("-day04-\n", .{});
     part1() catch unreachable;
     part2() catch unreachable;

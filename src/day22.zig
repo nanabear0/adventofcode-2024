@@ -74,7 +74,7 @@ fn doThing() !void {
     std.debug.print("part2: {d}\n", .{p2Result});
 }
 
-pub export fn day22() void {
+pub fn day22() void {
     std.debug.print("-day22-\n", .{});
     doThing() catch unreachable;
 }
