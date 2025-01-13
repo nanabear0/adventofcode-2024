@@ -109,6 +109,11 @@ fn part2() !void {
     try swaps.put("z37", "rrn");
     try swaps.put("rrn", "z37");
 
+    var options = std.ArrayList(std.ArrayList([]const u8)).init(gpa);
+    defer options.deinit();
+    defer {
+        for (options.items) |option| option.deinit();
+    }
     for (0..gateSet.count() - 1) |i| {
         const s1 = gateSet.keys()[i];
         if (swaps.contains(s1)) continue;
@@ -121,10 +126,26 @@ fn part2() !void {
             _ = swaps.remove(s1);
             _ = swaps.remove(s2);
             if (z == x + y) {
-                std.debug.print("swap {s} and {s}: {d}+{d}={d}\n", .{ s1, s2, x, y, z });
+                var newList = std.ArrayList([]const u8).init(gpa);
+                var swapsIter = swaps.keyIterator();
+                while (swapsIter.next()) |swap| try newList.append(swap.*);
+                try newList.append(s1);
+                try newList.append(s2);
+                try options.append(newList);
             }
         }
     }
+    for (options.items, 0..) |option, i| {
+        std.debug.print("part2 option#{d} ", .{i + 1});
+        std.mem.sort([]const u8, option.items, {}, lessThanFn);
+        std.debug.print("{s}", .{option.items[0]});
+        for (option.items[1..]) |o| std.debug.print(",{s}", .{o});
+        std.debug.print("\n", .{});
+    }
+}
+
+fn lessThanFn(_: void, a: []const u8, b: []const u8) bool {
+    return std.mem.order(u8, a, b) == std.math.Order.lt;
 }
 
 const Instruction = enum {
